@@ -1,0 +1,35 @@
+version: '2.1'
+
+services:
+  localstack:
+    container_name: "${LOCALSTACK_DOCKER_NAME-localstack_main}"
+    image: localstack/localstack-full
+    ports:
+      - "4566:4566"
+      - "${PORT_WEB_UI-8080}:${PORT_WEB_UI-8080}"
+    environment:
+      - SERVICES=s3,sqs
+      - LAMBDA_EXECUTOR=local
+      - LAMBDA_REMOTE_DOCKER=false
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+  
+  app:
+    build: .
+    volumes:
+      - .:/app
+      - nodemodules:/app/node_modules
+    restart: on-failure
+    ports:
+      - 3000:3000
+    links:
+      - localstack
+    depends_on:
+      - localstack
+    environment:
+      PORT_SERVICE: 4566
+      LOCALSTACK_HOST: localstack
+
+volumes:
+  nodemodules: {}
